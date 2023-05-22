@@ -26,10 +26,12 @@ export const createPrestation = async () => {
           {
             name: faker.commerce.productName(),
             description: faker.commerce.productDescription(),
+            price: faker.commerce.price(),
           },
           {
             name: faker.commerce.productName(),
             description: faker.commerce.productDescription(),
+            price: faker.commerce.price(),
           },
         ],
       },
