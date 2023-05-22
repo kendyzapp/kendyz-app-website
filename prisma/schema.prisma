@@ -1,66 +1,67 @@
 generator client {
-    provider        = "prisma-client-js"
-    previewFeatures = ["fullTextSearch", "fullTextIndex"]
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch", "fullTextIndex"]
 }
 
 datasource db {
-    provider          = "postgresql"
-    url               = env("POSTGRES_PRISMA_URL") // uses connection pooling
-    directUrl         = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
-    shadowDatabaseUrl = env("POSTGRES_URL_NON_POOLING") // used for migrations
+  provider          = "postgresql"
+  url               = env("POSTGRES_PRISMA_URL")
+  directUrl         = env("POSTGRES_URL_NON_POOLING")
+  shadowDatabaseUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
 model Category {
-    id          String       @id @default(uuid())
-    name        String       @unique
-    prestations Prestation[]
-}
-
-enum PrestationStatus {
-    DRAFT
-    PUBLISHED
+  id          String       @id @default(uuid())
+  name        String       @unique
+  prestations Prestation[]
 }
 
 model Prestation {
-    id             String           @id @default(uuid())
-    status         PrestationStatus @default(DRAFT)
-    organizationId String
-    name           String           @unique
-    description    String
-    image          String
-    category       Category         @relation(fields: [categoryId], references: [id])
-    categoryId     String
-    services       Service[]
-    bookings       Booking[]
+  id             String           @id @default(uuid())
+  status         PrestationStatus @default(DRAFT)
+  organizationId String
+  name           String           @unique
+  description    String
+  image          String
+  categoryId     String
+  bookings       Booking[]
+  category       Category         @relation(fields: [categoryId], references: [id])
+  services       Service[]
 }
 
 model Service {
-    id           String     @id @default(uuid())
-    name         String
-    description  String
-    prestation   Prestation @relation(fields: [prestationId], references: [id], onDelete: Cascade)
-    prestationId String
-    Booking      Booking?   @relation(fields: [bookingId], references: [id])
-    bookingId    String?
-}
-
-enum BookingStatus {
-    CANCELLED
-    CREATED
-    CONFIRMED
+  id           String     @id @default(uuid())
+  name         String
+  description  String
+  price        String
+  prestationId String
+  bookingId    String?
+  Booking      Booking?   @relation(fields: [bookingId], references: [id])
+  prestation   Prestation @relation(fields: [prestationId], references: [id], onDelete: Cascade)
 }
 
 model Booking {
-    id           String        @id @default(uuid())
-    status       BookingStatus @default(CREATED)
-    datetime     DateTime
-    clientId     String
-    description  String?
-    prestation   Prestation    @relation(fields: [prestationId], references: [id])
-    prestationId String
-    services     Service[]
+  id           String        @id @default(uuid())
+  status       BookingStatus @default(CREATED)
+  datetime     DateTime
+  clientId     String
+  description  String?
+  prestationId String
+  prestation   Prestation    @relation(fields: [prestationId], references: [id])
+  services     Service[]
 }
 
 model Message {
-    id String @id @default(uuid())
+  id String @id @default(uuid())
+}
+
+enum PrestationStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum BookingStatus {
+  CREATED
+  CONFIRMED
+  CANCELLED
 }

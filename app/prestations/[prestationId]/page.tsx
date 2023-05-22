@@ -31,6 +31,7 @@ export const PrestationPage = async ({ params }: PrestationPageProps) => {
           <div key={service.id} className="flex p-4 rounded-lg bg-violet-300">
             <div>
               <h2 className="text-xl">{service.name}</h2>
+              <h2 className="text-xl">{service.price} €</h2>
               <p>{service.description}</p>
             </div>
             <form action={deleteService}>
