@@ -7,14 +7,20 @@ import aws from "../api/aws";
 export const ImagesPage = async () => {
   const [message, setMessage] = useState<String>();
   const [file, setFile] = useState<File>();
-  async function storeFile(e: ChangeEvent<HTMLInputElement>) {
-    console.log("Store file")
-    if (e.target.files != null ){
-      setFile(e.target.files[0])
+  
+
+  const handleChange = (event:ChangeEvent<HTMLInputElement>) => {
+
+    if (event.target.files && event.target.files[0]) {
+      if (event.target.files != null ){
+        setMessage(event.target.files[0].name);
+        setFile(event.target.files[0])
+      }
     }
-    
-  }
-  const uploadFile = async() => {
+  };
+  
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
     if (file === null) {
       setMessage("uploading");
       var returnedData = aws(file);
@@ -23,12 +29,16 @@ export const ImagesPage = async () => {
     }
   }
   return (
-    <div>
-      <p> Upload file:</p>
-      <p style = {{color: "red"}}>{message}</p>
-      <input type="file" onChange={(e)=>storeFile(e)}/>
-      <input type="button" onClick={uploadFile} defaultValue= "Send"/>
-    </div>
+    <form onSubmit={handleSubmit}>
+      <div>
+        <p> Upload file:</p>
+        <p style = {{color: "red"}}>{message}</p>
+        <input type="file" onChange={handleChange} accept="image/*"/>
+        <button type="submit" className="p-2 text-sm shadow bg-violet-200 rounded-xl">
+          Seed !
+        </button>
+      </div>
+    </form>
   );
 };
 
