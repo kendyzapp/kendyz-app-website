@@ -1,45 +1,68 @@
 "use client";
 
+import Image from "next/image";
 import { ChangeEvent, useState } from "react";
-import aws from "../api/aws";
 
+export default function FileUploader() {
+  const [imageUrl, setImageUrl] = useState("/images/placeholder-image.jpg");
 
-export const ImagesPage = async () => {
-  const [message, setMessage] = useState<String>();
-  const [file, setFile] = useState<File>();
-  
+  const onImageFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const fileInput = e.target;
 
-  const handleChange = (event:ChangeEvent<HTMLInputElement>) => {
+    if (!fileInput.files) {
+      console.warn("no file was chosen");
+      return;
+    }
 
-    if (event.target.files && event.target.files[0]) {
-      if (event.target.files != null ){
-        setMessage(event.target.files[0].name);
-        setFile(event.target.files[0])
+    if (!fileInput.files || fileInput.files.length === 0) {
+      console.warn("files list is empty");
+      return;
+    }
+
+    const file = fileInput.files[0];
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        console.error("something went wrong, check your console.");
+        return;
       }
-    }
-  };
-  
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    if (file === null) {
-      setMessage("uploading");
-      var returnedData = aws(file);
-      setMessage(String(returnedData));
-      setFile(undefined);
-    }
-  }
-  return (
-    <form onSubmit={handleSubmit}>
-      <div>
-        <p> Upload file:</p>
-        <p style = {{color: "red"}}>{message}</p>
-        <input type="file" onChange={handleChange} accept="image/*"/>
-        <button type="submit" className="p-2 text-sm shadow bg-violet-200 rounded-xl">
-          Seed !
-        </button>
-      </div>
-    </form>
-  );
-};
 
-export default ImagesPage;
+      const data: { fileUrl: string } = await res.json();
+
+      setImageUrl(data.fileUrl);
+    } catch (error) {
+      console.error("something went wrong, check your console.");
+    }
+
+    /** Reset file input */
+    e.target.type = "text";
+    e.target.type = "file";
+  };
+
+  return (
+    <label
+      style={{ paddingTop: `calc(100% * (${446} / ${720}))` }}
+    >
+      <Image
+        src={imageUrl}
+        alt="uploaded image"
+        width={720}
+        height={446}
+        priority={true}
+      />
+      <input
+        style={{ display: "none" }}
+        type="file"
+        onChange={onImageFileChange}
+      />
+    </label>
+  );
+}
