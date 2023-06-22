@@ -59,7 +59,6 @@ export default function FileUploader() {
         priority={true}
       />
       <input
-        style={{ display: "none" }}
         type="file"
         onChange={onImageFileChange}
       />
