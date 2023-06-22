@@ -1,0 +1,335 @@
+openapi: 3.0.1
+info:
+  title: Apple Maps Server API
+  description: |
+    The Apple Maps Server API provides a RESTful interface for requesting Apple Maps data from your server. The API is designed to be used in conjunction with the Apple Maps JavaScript API and Apple Maps Embed API. The API is available to all developers with a MapKit JS ID.
+  version: 1.0.0
+
+servers:
+  - url: https://maps-api.apple.com/v1
+    description: Production server
+
+paths:
+  /token:
+    get:
+      description: "Returns a JWT maps access token that you use to call the service API."
+      operationId: token
+      security:
+        - BearerAuth: []
+      tags:
+        - Essentials
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: "A response that indicates the authorization request is successful. The dictionary that accompanies the response contains a maps access token and an integer that indicates the time in seconds until the token expires."
+                $ref: "#/components/schemas/TokenReponse"
+        401:
+          $ref: "#/components/responses/401"
+        429:
+          $ref: "#/components/responses/429"
+        500:
+          $ref: "#/components/responses/500"
+
+  /searchAutocomplete:
+    get:
+      description: "Find results that you can use to autocomplete searches."
+      operationId: searchAutocomplete
+      security:
+        - BearerAuth: []
+      tags:
+        - Searching
+      parameters:
+        - in: query
+          name: q
+          description: "The query to autocomplete. For example, q=eiffel."
+          required: true
+          schema:
+            type: string
+          example: eiffel
+        - in: query
+          name: excludePoiCategories
+          description: "A comma-separated list of strings that describes the points of interest to exclude from the search results. For example, excludePoiCategories=Restaurant,Cafe."
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/PoiCategory"
+          example: Restaurant,Cafe
+        - in: query
+          name: includePoiCategories
+          description: "A comma-separated list of strings that describes the points of interest to include in the search results. For example, includePoiCategories=Restaurant,Cafe."
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/PoiCategory"
+          example: Restaurant,Cafe
+        - in: query
+          name: lang
+          description: "The language the server uses when returning the response, specified using a BCP 47 language code. For example, for English, use lang=en-US."
+          schema:
+            type: string
+            default: en-US
+          example: en-US
+        - in: query
+          name: limitToCountries
+          description: "The language the server uses when returning the response, specified using a BCP 47 language code. For example, for English, use lang=en-US."
+          schema:
+            type: array
+            items:
+              type: string
+          example: US,CA
+        - in: query
+          name: resultTypeFilter
+          description: "A comma-separated list of strings that describes the kind of result types to include in the response. For example, resultTypeFilter=Poi."
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - Address
+                - Poi
+                - Query
+          example: Poi
+        - in: query
+          name: searchLocation
+          description: "A location the app defines as a hint. Specify the location as a comma-separated string containing the latitude and longitude. For example, searchLocation=37.78,-122.42. If you don’t provide a searchLocation, the server uses userLocation and searchRegion as fallback hints."
+          schema:
+            type: string
+          example: 37.78,-122.42
+        - in: query
+          name: searchRegion
+          description: "A region the app defines as a hint for the search. Specify the region as a comma-separated string that describes the region in the form of a north-latitude, east-longitude, south-latitude, west-longitude string. If you don’t provide searchLocation, the server uses userLocation and searchRegion as fallback hints. For example, searchRegion=38,-122.1,37.5,-122.5."
+          schema:
+            type: string
+          example: 38,-122.1,37.5,-122.5
+        - in: query
+          name: userLocation
+          description: "The location of the user, specified as a comma-separated string that contains the latitude and longitude. For example, userLocation=37.78,-122.42. Certain APIs, such as Search, may opt to use the userLocation, if specified, as a fallback for the searchLocation."
+          schema:
+            type: string
+          example: 37.78,-122.42
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: "Returns a list of SearchAutocompleteResponse results."
+                $ref: "#/components/schemas/SearchAutocompleteResponse"
+        400:
+          $ref: "#/components/responses/400"
+        401:
+          $ref: "#/components/responses/401"
+        429:
+          $ref: "#/components/responses/429"
+        500:
+          $ref: "#/components/responses/500"
+components:
+  schemas:
+    Location:
+      type: object
+      description: "An object that describes a location in terms of its longitude and latitude."
+      properties:
+        latitude:
+          type: number
+          description: "A double value that describes the latitude of the coordinate."
+          format: double
+        longitude:
+          type: number
+          description: "A double value that describes the longitude of the coordinate."
+          format: double
+      required:
+        - latitude
+        - longitude
+    StructuredAddress:
+      description: "An object that describes the detailed address components of a place."
+      properties:
+        administrativeArea:
+          type: string
+          description: "The state or province of the place."
+        administrativeAreaCode:
+          type: string
+          description: "The short code for the state or area."
+        areaOfInterest:
+          type: string
+          description: "Common names of the area in which the place resides."
+        dependentLocalities:
+          type: array
+          description: "Common names for the local area or neighborhood of the place."
+          items:
+            type: string
+        fullThoroughfare:
+          type: string
+          description: "A combination of thoroughfare and subthoroughfare."
+        locality:
+          type: string
+          description: "The city of the place."
+        postCode:
+          type: string
+          description: "The postal code of the place."
+        subLocality:
+          type: string
+          description: "The name of the area within the locality."
+        subThoroughfare:
+          type: string
+          description: "The number on the street at the place"
+        thoroughfare:
+          type: string
+          description: "The street name at the place."
+      required:
+        - administrativeArea
+        - administrativeAreaCode
+        - areaOfInterest
+        - dependentLocalities
+        - fullThoroughfare
+        - postCode
+        - subLocality
+        - subThoroughfare
+        - thoroughfare
+    AutocompleteResult:
+      type: object
+      description: "An object that contains information you can use to suggest addresses and further refine search results."
+      properties:
+        completionUrl:
+          type: string
+          description: "The relative URI to the search endpoint to use to fetch more details pertaining to the result. If available, the framework encodes opaque data about the autocomplete result in the completion URL’s metadata parameter. If clients need to fetch the search result in a certain language, they’re responsible for specifying the lang parameter in the request"
+        displayLines:
+          type: array
+          description: "A JSON string array to use to create a long form of display text for the completion result."
+          items:
+            type: string
+        location:
+          description: "A Location object that specifies the location for the request in terms of its latitude and longitude."
+          $ref: "#/components/schemas/Location"
+        structuredAddress:
+          description: "A StructuredAddress object that describes the detailed address components of a place."
+          $ref: "#/components/schemas/StructuredAddress"
+      required:
+        - completionUrl
+        - displayLines
+        - location
+        - structuredAddress
+    SearchAutocompleteResponse:
+      type: object
+      description: "An array of autocomplete results."
+      properties:
+        results:
+          type: array
+          description: "An array of AutocompleteResult objects."
+          items:
+            $ref: "#/components/schemas/AutocompleteResult"
+      required:
+        - results
+    ErrorResponse:
+      type: object
+      description: "Information about an error that occurs while processing a request."
+      properties:
+        details:
+          type: array
+          description: "An array of strings with additional details about the error"
+          items:
+            type: string
+        message:
+          type: string
+          description: "A message that provides details about the error."
+      required:
+        - message
+        - details
+    TokenReponse:
+      type: object
+      description: "An object that contains an access token and an expiration time in seconds."
+      properties:
+        accessToken:
+          type: string
+          description: "A string that represents the access token."
+        expiresInSeconds:
+          type: integer
+          description: "An integer that indicates the time, in seconds from now until the token expires."
+      required:
+        - accessToken
+        - expiresInSeconds
+    PoiCategory:
+      type: string
+      description: "A string that describes a specific point of interest (POI) category."
+      enum:
+        - Airport
+        - AirportGate
+        - AirportTerminal
+        - AmusementPark
+        - ATM
+        - Aquarium
+        - Bakery
+        - Bank
+        - Beach
+        - Brewery
+        - Cafe
+        - Campground
+        - CarRental
+        - EVCharger
+        - FireStation
+        - FitnessCenter
+        - FoodMarket
+        - GasStation
+        - Hospital
+        - Hotel
+        - Laundry
+        - Library
+        - Marina
+        - MovieTheater
+        - Museum
+        - NationalPark
+        - Nightlife
+        - Park
+        - Parking
+        - Pharmacy
+        - Playground
+        - Police
+        - PostOffice
+        - PublicTransport
+        - ReligiousSite
+        - Restaurant
+        - Restroom
+        - School
+        - Stadium
+        - Store
+        - Theater
+        - University
+        - Winery
+        - Zoo
+
+  responses:
+    400:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            description: "An ErrorResponse object that contains an error message and an array of strings that contain additional details about the error."
+            $ref: "#/components/schemas/ErrorResponse"
+    401:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            description: "An ErrorResponse object that contains an error message that indicates the Maps access token is missing or invalid, and an array of strings that contains additional details about the error."
+            $ref: "#/components/schemas/ErrorResponse"
+    429:
+      description: Too Many Requests
+      content:
+        application/json:
+          schema:
+            description: "An ErrorResponse object that indicates the call exceeds the daily service call quota for the authorization token. The app can try again later. If your app requires a larger daily quota, submit a quota increase request form."
+            $ref: "#/components/schemas/ErrorResponse"
+    500:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            description: "An ErrorResponse object that contains a server error message and an array of strings that describe additional details about the error."
+            $ref: "#/components/schemas/ErrorResponse"
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

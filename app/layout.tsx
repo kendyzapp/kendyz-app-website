@@ -1,23 +1,32 @@
+"use client";
+
+import { PropsWithChildren, ReactNode } from "react";
 import { Analytics } from "@vercel/analytics/react";
-import { ClerkProvider } from "@clerk/nextjs";
-import { PropsWithChildren } from "react";
+import { SessionProvider, useSession } from "next-auth/react";
 
 import "./globals.css";
 
-export const metadata = {
-  title: "Kendyz",
-};
+type RootLayoutProps = {
+  categories: ReactNode;
+  navbar: ReactNode;
+} & PropsWithChildren;
 
-export const RootLayout = ({ children }: PropsWithChildren) => {
+export const RootLayout = ({
+  children,
+  categories,
+  navbar,
+}: RootLayoutProps) => {
   return (
-    <ClerkProvider>
-      <html lang="en">
+    <html lang="fr">
+      <SessionProvider session={null}>
         <body>
+          {navbar}
+          {categories}
           {children}
           <Analytics />
         </body>
-      </html>
-    </ClerkProvider>
+      </SessionProvider>
+    </html>
   );
 };
 

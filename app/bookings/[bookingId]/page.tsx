@@ -1,58 +1,35 @@
-import NavBar from "@/app/navbar";
-import { getBooking } from "../actions";
-import Link from "next/link";
-import Image from "next/image";
-import { cancelBooking, setBookingStatus, confirmBooking } from "../actions";
+import prisma from "@/lib/prisma";
+import { auth } from "@clerk/nextjs";
 
 type BookingPageProps = {
-  params: {
-    bookingId: string;
-  };
+	params: {
+		bookingId: string;
+	};
 };
 
+export async function getBooking(bookingId: string) {
+	"use server";
+	const { userId, orgId } = auth();
+	if (!userId && !orgId) throw new Error("No auth user found");
+	const booking = await prisma.booking.findFirstOrThrow({
+		where: {
+			id: bookingId,
+			OR: [{ clientId: userId }, { prestation: { organizationId: orgId } }],
+		},
+		include: { prestation: true, services: true, messages: true },
+	});
+	return booking;
+}
+
 export const BookingPage = async ({ params }: BookingPageProps) => {
-  const booking = await getBooking(params.bookingId);
-  return (
-    <div>
-      <NavBar />
-      <div className="flex justify-center gap-4 p-4 bg-violet-50 rounded-3xl">
-        <div className="flex flex-col gap-4">
-          <h2>{booking.datetime.toLocaleString()}</h2>
-          <p>{booking.description}</p>
-          <ul className="flex flex-col gap-2">
-            {booking.services.map((service) => (
-              <li key={service.id} className="p-4 bg-violet-100 rounded-xl">
-                <h4>{service.name}</h4>
-                <p>{service.description}</p>
-              </li>
-            ))}
-          </ul>
-          <form className="flex gap-4" action={setBookingStatus}>
-            <button className="p-2 text-sm shadow bg-violet-200 rounded-xl" name="confirm">
-              Valider
-            </button>
-            <button className="p-2 text-sm shadow bg-violet-200 rounded-xl" name="cancel">
-              Annuler
-            </button>
-          </form>
-        </div>
-        <div className="flex flex-col gap-4 p-4 bg-violet-100 rounded-3xl">
-          <h1 className="text-3xl">{booking.prestation.name}</h1>
-          <Image
-            src={booking.prestation.image}
-            alt={booking.prestation.name}
-            width={640}
-            height={480}
-            className="rounded-2xl"
-          />
-          <p>{booking.prestation.description}</p>
-          <Link href={`/prestations/${booking.prestation.id}`}>
-            <button className="p-2 text-sm shadow bg-violet-200 rounded-xl">Voir la prestation</button>
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
+	const booking = await getBooking(params.bookingId);
+	return (
+		<div className="px-8 lg:px-24 py-4">
+			<div className="flex ">
+				<div className="flex flex-col gap-4 w-3/5"></div>
+			</div>
+		</div>
+	);
 };
 
 export default BookingPage;

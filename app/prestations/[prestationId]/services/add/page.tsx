@@ -1,4 +1,4 @@
-import { createPrestationService } from "../../../actions";
+import { createPrestationService } from "../../../../@prestations/actions";
 
 type PrestationServiceAddPageProps = {
   params: {
