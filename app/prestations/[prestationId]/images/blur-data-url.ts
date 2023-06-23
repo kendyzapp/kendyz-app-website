@@ -2,8 +2,10 @@
 
 import { getPlaiceholder } from "plaiceholder";
 
+import prisma from "@/lib/prisma";
+
 export const getBlurDataUrl = async (imageUrl: string) => {
-  const image = await prisma.prestationImage.findFirstOrThrow({
+  const image = await prisma.image.findFirstOrThrow({
     where: { url: imageUrl },
     select: { url: true, blurDataUrl: true },
   });
@@ -11,7 +13,7 @@ export const getBlurDataUrl = async (imageUrl: string) => {
   const imageData = await fetch(image.url);
   const buffer = Buffer.from(await imageData.arrayBuffer());
   const { base64 } = await getPlaiceholder(buffer);
-  await prisma.prestationImage.update({
+  await prisma.image.update({
     where: { url: image.url },
     data: { blurDataUrl: base64 },
   });

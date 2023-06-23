@@ -11,18 +11,25 @@ import {
   images,
   users,
   prestationLikes,
-  rates,
+  ratings,
+  bookings,
 } from "./seed-data.mjs";
 
 const prisma = new PrismaClient();
 
 const deleteAll = async () => {
   try {
-    await prisma.prestationImage.deleteMany();
+    await prisma.image.deleteMany();
     console.log("Deleted all images");
 
     await prisma.prestationLike.deleteMany();
     console.log("Deleted all prestation likes");
+
+    await prisma.rating.deleteMany();
+    console.log("Deleted all rates");
+
+    await prisma.booking.deleteMany();
+    console.log("Deleted all bookings");
 
     await prisma.prestation.deleteMany();
     console.log("Deleted all prestations");
@@ -32,9 +39,6 @@ const deleteAll = async () => {
 
     await prisma.user.deleteMany();
     console.log("Deleted all users");
-
-    await prisma.rate.deleteMany();
-    console.log("Deleted all rates");
   } catch (error) {
     console.error(error);
   }
@@ -43,7 +47,7 @@ const deleteAll = async () => {
 const createAll = async () => {
   try {
     const usersCreated = await prisma.user.createMany({
-      data: users,
+      data: await Promise.all(users),
     });
     console.log(`Created ${usersCreated.count} users`);
 
@@ -53,7 +57,7 @@ const createAll = async () => {
     console.log(`Created ${categoriesCreated.count} categories`);
 
     const prestationsCreated = await prisma.prestation.createMany({
-      data: prestations,
+      data: await Promise.all(prestations),
     });
     await prisma.$executeRaw`UPDATE prestations SET coordinates = ST_SetSRID(ST_MakePoint(${faker.location.longitude(
       {
@@ -66,20 +70,25 @@ const createAll = async () => {
     })}), 4326)`;
     console.log(`Created ${prestationsCreated.count} prestations`);
 
-    const imagesCreated = await prisma.prestationImage.createMany({
-      data: images,
+    const imagesCreated = await prisma.image.createMany({
+      data: await Promise.all(images),
     });
     console.log(`Created ${imagesCreated.count} images`);
 
     const prestationLikesCreated = await prisma.prestationLike.createMany({
-      data: prestationLikes(),
+      data: await prestationLikes(),
     });
     console.log(`Created ${prestationLikesCreated.count} prestation likes`);
 
-    const ratesCreated = await prisma.rate.createMany({
-      data: rates(),
+    const bookingsCreated = await prisma.booking.createMany({
+      data: await Promise.all(bookings),
     });
-    console.log(`Created ${ratesCreated.count} rates`);
+    console.log(`Created ${bookingsCreated.count} bookings`);
+
+    const ratingsCreated = await prisma.rating.createMany({
+      data: await Promise.all(ratings),
+    });
+    console.log(`Created ${ratingsCreated.count} rates`);
   } catch (error) {
     console.error(error);
   }

@@ -1,58 +1,9 @@
-import { HiOutlineHeart, HiHeart, HiStar } from "react-icons/hi2";
+import prisma from "@/lib/prisma";
+import { Star, Heart, Presentation } from "lucide-react";
 import Image from "next/image";
 
-import prisma from "@/lib/prisma";
 import { getBlurDataUrl } from "./images/blur-data-url";
 import BookPrestation from "./book-prestation";
-
-const getPrestation = async (prestationId: string) => {
-  return await prisma.prestation.findUniqueOrThrow({
-    where: {
-      id: prestationId,
-    },
-    include: {
-      _count: {
-        select: {
-          Rates: true,
-          Likes: true,
-        },
-      },
-      Images: {
-        select: {
-          url: true,
-        },
-      },
-      User: {
-        select: {
-          _count: {
-            select: {
-              Rates: true,
-            },
-          },
-          name: true,
-          image: true,
-        },
-      },
-      Rates: {
-        orderBy: {
-          createdAt: "desc",
-        },
-        select: {
-          value: true,
-          description: true,
-          createdAt: true,
-          User: {
-            select: {
-              name: true,
-              image: true,
-              id: true,
-            },
-          },
-        },
-      },
-    },
-  });
-};
 
 type PrestationPageProps = {
   params: {
@@ -60,31 +11,71 @@ type PrestationPageProps = {
   };
 };
 
-export const PrestationPage = async ({ params }: PrestationPageProps) => {
-  const prestation = await getPrestation(params.prestationId);
-  const aggregate = await prisma.rate.aggregate({
+const getPrestation = async (prestationId: string) => {
+  return await prisma.prestation.findUniqueOrThrow({
     where: {
-      prestationId: params.prestationId,
+      id: prestationId,
     },
-    _avg: {
-      value: true,
+    include: {
+      Images: {
+        select: {
+          url: true,
+        },
+      },
+      Bookings: {
+        where: {
+          NOT: {
+            Rating: undefined || null,
+          },
+        },
+        select: {
+          Rating: true,
+          Client: {
+            select: {
+              name: true,
+              image: true,
+            },
+          },
+        },
+      },
+      User: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
+      _count: {
+        select: {
+          Likes: true,
+          Bookings: true,
+        },
+      },
     },
   });
+};
+
+const PrestationPage = async ({ params }: PrestationPageProps) => {
+  const prestation = await getPrestation(params.prestationId);
+  const ratingAverage =
+    prestation.Bookings.reduce(
+      (acc, { Rating }) => acc + (Rating?.value ?? 0),
+      0
+    ) / prestation.Bookings.length;
   const header = (
     <div className="flex flex-row items-center">
       <div className="flex-1 flex flex-col">
         <h1 className="text-3xl ">{prestation.name}</h1>
         <div className="flex items-center gap-2">
-          <HiStar className="text-lg text-yellow-400" />
+          <Star className="text-lg fill-yellow-400 text-yellow-400" />
           <p className="text-md">
             {" "}
-            {aggregate._avg.value?.toPrecision(2)} • {prestation._count.Rates}{" "}
+            {ratingAverage.toPrecision(2)} • {prestation.Bookings.length}{" "}
             commentaires
           </p>
         </div>
       </div>
       <div className="flex flex-col gap-2 items-end">
-        <HiOutlineHeart className="text-4xl text-red-500" />
+        <Heart className="text-4xl text-red-500" />
         <p className="text-sm text-gray-400">
           {prestation._count.Likes} personnes aiment
         </p>
@@ -117,30 +108,6 @@ export const PrestationPage = async ({ params }: PrestationPageProps) => {
       ))}
     </div>
   );
-  const categoryPrestation = (
-    <div className="flex flex-col">
-      <h2 className="text-xl">Catégorie</h2>
-      <p className="text-3xl text-violet-400">{prestation.categoryName}</p>
-    </div>
-  );
-
-  const userProfile = (
-    <div className="flex flex-row items-center gap-4">
-      <div className="flex flex-col items-end">
-        <p className="text-xl">{prestation.User.name}</p>
-        <p className="text-gray-500">
-          {prestation.User._count.Rates} commentaires
-        </p>
-      </div>
-      <Image
-        src={prestation.User.image ?? "/logo.png"}
-        alt={prestation.User.name + " profile picture"}
-        width={50}
-        height={50}
-        className="shadow-lg rounded-full"
-      />
-    </div>
-  );
   const description = (
     <div className="flex flex-col gap-4">
       <h2 className="text-2xl">Description</h2>
@@ -153,40 +120,63 @@ export const PrestationPage = async ({ params }: PrestationPageProps) => {
       <h2 className="text-2xl">Commentaires</h2>
       <hr />
       <ul className="flex flex-row overflow-x-scroll gap-4 snap-x">
-        {prestation.Rates.map((rate) => (
+        {prestation.Bookings.map((booking) => (
           <li
-            key={rate.User.id}
+            key={booking.Rating?.bookingId}
             className="p-4 flex-shrink-0 w-96 rounded-lg border snap-start"
           >
             <div className="flex flex-col gap-2">
               <div className="flex flex-row items-center gap-4">
                 <Image
-                  src={rate.User.image ?? "/logo.png"}
-                  alt={rate.User.name + " profile picture"}
+                  src={booking.Client.image ?? "/logo.png"}
+                  alt={booking.Client.name + " profile picture"}
                   width={34}
                   height={34}
                   className="shadow-lg rounded-full"
                 />
                 <div className="flex-1 flex-col flex">
-                  <p className="text-xl">{rate.User.name}</p>
+                  <p className="text-xl">{booking.Client.name}</p>
                   <p className="text-gray-500 text-sm ">
-                    {rate.createdAt.toLocaleDateString(undefined, {
+                    {booking.Rating?.createdAt.toLocaleDateString(undefined, {
                       month: "long",
                       year: "numeric",
                     })}
                   </p>
                 </div>
                 <div className="flex gap-1 items-center">
-                  <p>{rate.value}</p>
-                  <HiStar className="text-2xl text-yellow-400" />
+                  <p>{booking.Rating?.value}</p>
+                  <Star className="text-2xl text-yellow-400 fill-yellow-400" />
                 </div>
               </div>
               <hr />
-              <p>{rate.description}</p>
+              <p>{booking.Rating?.content}</p>
             </div>
           </li>
         ))}
       </ul>
+    </div>
+  );
+  const categoryPrestation = (
+    <div className="flex flex-col">
+      <h2 className="text-xl">Catégorie</h2>
+      <p className="text-3xl text-violet-400">{prestation.categoryName}</p>
+    </div>
+  );
+  const userProfile = (
+    <div className="flex flex-row items-center gap-4">
+      <div className="flex flex-col items-end">
+        <p className="text-xl">{prestation.User.name}</p>
+        <p className="text-gray-500">
+          {prestation._count.Bookings} commentaires
+        </p>
+      </div>
+      <Image
+        src={prestation.User.image ?? "/logo.png"}
+        alt={prestation.User.name + " profile picture"}
+        width={50}
+        height={50}
+        className="shadow-lg rounded-full"
+      />
     </div>
   );
   return (
@@ -195,14 +185,14 @@ export const PrestationPage = async ({ params }: PrestationPageProps) => {
       {imagesGrid}
       <div className="flex flex-row gap-8">
         <div className="flex flex-col gap-8 w-3/5">
-          <div className="flex flex-row items-center justify-between">
+          <div className="flex flex-row justify-between">
             {categoryPrestation}
             {userProfile}
           </div>
           {description}
           {comments}
         </div>
-        <div className="w-2/5 relative">
+        <div className="w-2/5">
           <BookPrestation {...prestation} />
         </div>
       </div>

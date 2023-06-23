@@ -1,44 +1,24 @@
-"use client";
-
-import Link from "next/link";
 import Image from "next/image";
-import { signIn } from "next-auth/react";
-import { useSession } from "next-auth/react";
+import Link from "next/link";
 
-import kendyzLogo from "@/public/logo.png";
-import SearchBar from "./search";
+import logo from "@/public/logo.png";
+import { getServerSession } from "next-auth";
+import { SignInButton, SignOutButton } from "./auth";
 
-type NavBarProps = {
-  searchParams?: {
-    query?: string;
-    category?: string;
-  };
-};
-
-const NavBar = async ({ searchParams }: NavBarProps) => {
-  const { status } = useSession();
+export const navbar = async () => {
+  const session = await getServerSession();
   return (
-    <div className="flex items-center justify-between gap-4 lg:px-24 px-12 py-4">
+    <div className="flex flex-row py-8 px-12 items-center">
       <Link href="/">
-        <Image src={kendyzLogo} alt="Kendyz Logo" className="w-24" />
+        <Image src={logo} alt="logo Kendyz" width={100} />
       </Link>
-      <SearchBar searchParams={searchParams} />
-      <div>
-        {status === "authenticated" ? (
-          <button className="bg-violet-500 hover:bg-violet-600 text-white font-bold py-2 px-4 rounded-full">
-            Profile
-          </button>
-        ) : (
-          <button
-            className="bg-violet-500 hover:bg-violet-600 text-white font-bold py-2 px-4 rounded-full"
-            onClick={() => signIn()}
-          >
-            Login
-          </button>
-        )}
+      <div className="flex-1" />
+      <div className="flex gap-4 items-center">
+        <p className="font-medium underline">Je suis un profesionnel</p>
+        {!session ? <SignInButton /> : <SignOutButton />}
       </div>
     </div>
   );
 };
 
-export default NavBar;
+export default navbar;

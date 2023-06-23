@@ -11,16 +11,6 @@ datasource db {
     extensions        = [postgis()]
 }
 
-model PrestationImage {
-    url          String  @id
-    blurDataUrl  String? @map("blur_data_url")
-    prestationId String  @map("prestation_id")
-
-    Prestation Prestation @relation(fields: [prestationId], references: [id], onDelete: Cascade)
-
-    @@map("prestation_images")
-}
-
 model Category {
     name String @id
 
@@ -29,36 +19,34 @@ model Category {
     @@map("categories")
 }
 
-model Rate {
-    value        Int
-    description  String
-    userId       String   @map("user_id")
-    prestationId String   @map("prestation_id")
-    createdAt    DateTime @default(now()) @map("created_at")
+model Rating {
+    value     Int
+    content   String
+    createdAt DateTime @default(now()) @map("created_at")
 
-    User       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-    Prestation Prestation @relation(fields: [prestationId], references: [id], onDelete: Cascade)
+    bookingId String  @id @map("booking_id")
+    Booking   Booking @relation(fields: [bookingId], references: [id])
 
-    @@id([userId, prestationId])
-    @@map("rates")
+    @@map("ratings")
 }
 
 model Prestation {
-    id           String   @id @default(cuid())
-    name         String
-    description  String
-    categoryName String   @map("category_name")
-    createdAt    DateTime @default(now()) @map("created_at")
-    updatedAt    DateTime @updatedAt @map("updated_at")
+    id          String   @id @default(cuid())
+    name        String
+    description String
+    createdAt   DateTime @default(now()) @map("created_at")
+    updatedAt   DateTime @updatedAt @map("updated_at")
+
     userId       String   @map("user_id")
+    User         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    categoryName String   @map("category_name")
+    Category     Category @relation(fields: [categoryName], references: [name])
 
     coordinates Unsupported("geometry(Point, 4326)")?
 
-    Images   PrestationImage[]
-    Category Category          @relation(fields: [categoryName], references: [name])
-    User     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+    Images   Image[]
     Likes    PrestationLike[]
-    Rates    Rate[]
+    Bookings Booking[]
 
     @@index([coordinates], name: "prestations_idx", type: Gist)
     @@map("prestations")
@@ -75,73 +63,46 @@ model PrestationLike {
     @@map("prestation_likes")
 }
 
-model Book {
-    id          String @id @default(cuid())
+model Image {
+    url         String  @id
+    blurDataUrl String? @map("blur_data_url")
+
+    prestationId String     @map("prestation_id")
+    Prestation   Prestation @relation(fields: [prestationId], references: [id], onDelete: Cascade)
+
+    @@map("images")
+}
+
+model Booking {
+    id          String   @id @default(cuid())
     description String
+    date        DateTime
 
     coordinates Unsupported("geometry(Point, 4326)")?
 
-    @@index([coordinates], name: "books_idx", type: Gist)
-    @@map("books")
+    ratingId     Int?       @map("rating_id")
+    Rating       Rating?
+    prestationId String     @map("prestation_id")
+    Prestation   Prestation @relation(fields: [prestationId], references: [id])
+    clientId     String     @map("client_id")
+    Client       User       @relation(fields: [clientId], references: [id])
+
+    @@index([coordinates], name: "bookings_idx", type: Gist)
+    @@map("bookings")
 }
 
 model User {
-    id            String    @id @default(cuid())
-    name          String?
-    email         String?   @unique
-    emailVerified DateTime? @map("email_verified")
-    image         String?
-    createdAt     DateTime  @default(now()) @map("created_at")
-    updatedAt     DateTime  @updatedAt @map("updated_at")
+    id        String   @id @default(cuid())
+    name      String?
+    email     String?  @unique
+    password  String
+    image     String?
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
 
-    Accounts    Account[]
-    Sessions    Session[]
     Prestations Prestation[]
     Likes       PrestationLike[]
-    Rates       Rate[]
+    Bookings    Booking[]
 
     @@map("users")
-}
-
-model Account {
-    id                 String  @id @default(cuid())
-    userId             String  @map("user_id")
-    type               String
-    provider           String
-    providerAccountId  String  @map("provider_account_id")
-    refresh_token      String? @db.Text
-    access_token       String?
-    expires_at         Int?
-    token_type         String?
-    scope              String?
-    id_token           String?
-    session_state      String?
-    oauth_token_secret String?
-    oauth_token        String?
-
-    User User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-    @@unique([provider, providerAccountId])
-    @@map("accounts")
-}
-
-model Session {
-    id           String   @id @default(cuid())
-    sessionToken String   @unique @map("session_token")
-    expires      DateTime
-    userId       String   @map("user_id")
-
-    User User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-    @@map("sessions")
-}
-
-model VerificationToken {
-    id         Int      @id @default(autoincrement())
-    identifier String
-    token      String   @unique
-    expires    DateTime
-
-    @@unique([identifier, token])
-    @@map("verification_tokens")
 }

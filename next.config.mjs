@@ -14,6 +14,7 @@ const nextConfig = {
     typedRoutes: true,
     serverActions: true,
   },
+  swcMinify: true,
 };
 
 export default withPlaiceholder(nextConfig);

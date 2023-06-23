@@ -1,31 +1,29 @@
-"use client";
-
 import { PropsWithChildren, ReactNode } from "react";
 import { Analytics } from "@vercel/analytics/react";
-import { SessionProvider, useSession } from "next-auth/react";
 
 import "./globals.css";
+import AuthProvider from "./api/auth/provider";
 
 type RootLayoutProps = {
-  categories: ReactNode;
   navbar: ReactNode;
 } & PropsWithChildren;
 
-export const RootLayout = ({
-  children,
-  categories,
-  navbar,
-}: RootLayoutProps) => {
+export const metadata = {
+  title: "Kendyz",
+  description:
+    "Kendyz, la plateforme de mise en relation entre professionnels et particuliers",
+  image: "https://kendyz.fr/logo.png",
+  url: "https://kendyz.fr",
+};
+
+export const RootLayout = ({ navbar, children }: RootLayoutProps) => {
   return (
     <html lang="fr">
-      <SessionProvider session={null}>
-        <body>
-          {navbar}
-          {categories}
-          {children}
-          <Analytics />
-        </body>
-      </SessionProvider>
+      <body>
+        {navbar}
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 };

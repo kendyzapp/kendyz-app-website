@@ -1,4 +1,4 @@
-import { Prestation, PrestationImage, User } from "@prisma/client";
+import { Prestation, Image as PrestationImage, User } from "@prisma/client";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -36,7 +36,7 @@ const PrestationCard = async ({
     </div>
   );
   return (
-    <Link key={name} href={`/prestations/${id}`}>
+    <Link key={id} href={`/prestations/${id}`}>
       <div className="flex flex-col gap-4">
         <div className="relative aspect-square">
           <Image

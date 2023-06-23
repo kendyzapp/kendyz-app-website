@@ -2,7 +2,7 @@
 import { faker } from "@faker-js/faker";
 
 // @ts-check
-import { getPlaiceholder } from "plaiceholder";
+import { hash } from "bcrypt";
 
 export const categories = [
   {
@@ -28,62 +28,68 @@ export const categories = [
   },
 ];
 
-export const users = Array.from({ length: 500 }).map((_, i) => ({
+export const users = Array.from({ length: 100 }).map(async (_, i) => ({
   id: faker.string.uuid(),
   name: faker.person.fullName(),
   email: faker.internet.email(),
-  emailVerified: faker.helpers.maybe(faker.date.past),
+  password: await hash("password", 10),
   image: faker.image.avatar(),
 }));
 
-const prestationNumber = 1000;
+const prestationNumber = 500;
 
 export const prestations = Array.from({ length: prestationNumber }).map(
-  (_, i) => ({
+  async (_, i) => ({
     id: faker.string.uuid(),
     name: faker.commerce.productName(),
     description: faker.lorem.paragraphs(),
     categoryName: faker.helpers.arrayElement(categories).name,
-    userId: faker.helpers.arrayElement(users).id,
+    userId: (await faker.helpers.arrayElement(users)).id,
   })
 );
 
-export const prestationLikes = () => {
+export const prestationLikes = async () => {
   let prestationLikes = [];
   for (let i = 0; i < prestationNumber; i++) {
     const usersLikes = faker.helpers.arrayElements(users, { min: 0, max: 100 });
     for (const user of usersLikes) {
       prestationLikes.push({
-        prestationId: prestations[i].id,
-        userId: user.id,
+        prestationId: (await prestations[i]).id,
+        userId: (await user).id,
       });
     }
   }
   return prestationLikes;
 };
 
-export const rates = () => {
-  let rates = [];
-  for (let i = 0; i < prestationNumber; i++) {
-    const usersRates = faker.helpers.arrayElements(users, { min: 0, max: 100 });
-    for (const user of usersRates) {
-      rates.push({
-        prestationId: prestations[i].id,
-        userId: user.id,
-        value: faker.number.int({ min: 1, max: 5 }),
-        description: faker.lorem.paragraph(),
-      });
-    }
-  }
-  return rates;
-};
+export const bookings = prestations.flatMap((p) => {
+  const usersBookings = faker.helpers.arrayElements(users, {
+    min: 0,
+    max: 50,
+  });
+  return usersBookings.map(async (u) => ({
+    id: faker.string.uuid(),
+    date: faker.date.anytime(),
+    prestationId: (await p).id,
+    clientId: (await u).id,
+    description: faker.lorem.paragraph(),
+  }));
+});
+
+export const ratings = (await Promise.all(bookings))
+  .filter((b) => b.date.getTime() < new Date().getTime())
+  .map((b) => ({
+    bookingId: b.id,
+    value: faker.number.int({ min: 1, max: 5 }),
+    content: faker.lorem.paragraph(),
+  }));
 
 const prestationNumberImages = 5;
 
 export const images = Array.from({ length: prestationNumberImages }).flatMap(
   (_, i) =>
-    Array.from({ length: prestationNumber }).map((_, j) => ({
+    Array.from({ length: prestationNumber }).map(async (_, j) => ({
       url: faker.image.urlPicsumPhotos({ width: 640, height: 480 }),
-      prestationId: prestations[j].id,
+      prestationId: (await prestations[j]).id,
     }))
 );
